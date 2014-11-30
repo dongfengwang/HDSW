@@ -235,5 +235,29 @@
             <artifactId>hbase-server</artifactId>
             <version>0.96.1-hadoop2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-streaming-flume_2.10</artifactId>
+            <version>1.1.0</version>
+        </dependency>
     </dependencies>
+    <build>
+        <finalName>jetty-plugin-demo</finalName>
+        <plugins>
+            <!-- Maven Jetty Plugin -->
+            <plugin>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-maven-plugin</artifactId>
+            <version>9.2.3.v20140905</version>
+                <configuration>
+                    <scanIntervalSeconds>10</scanIntervalSeconds>
+                    <webApp>
+                        <contextPath>/test</contextPath>
+                    </webApp>
+                    <stopPort/>
+                    <stopKey/>
+                </configuration>
+        </plugin>
+        </plugins>
+    </build>
 </project>
