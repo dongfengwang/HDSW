@@ -3,11 +3,18 @@ package HBase;
 /**
  * Created by Administrator on 2014/11/9.
  */
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HColumnDescriptor;
 import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.KeyValue;
 import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.filter.CompareFilter;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
+import org.apache.hadoop.hbase.filter.SingleColumnValueFilter;
+import org.apache.hadoop.hbase.util.Bytes;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -18,6 +25,14 @@ public class HBaseOperation {
     //.相关属性
     private  Configuration conf ;
     private  HBaseAdmin admin;
+    static HBaseConfiguration cfg = null;
+        static {
+                Configuration HBASE_CONFIG = new Configuration();
+                HBASE_CONFIG.set("hbase.zookeeper.quorum", "localhost");
+                HBASE_CONFIG.set("hbase.zookeeper.property.clientPort", "2222");
+                cfg = new HBaseConfiguration(HBASE_CONFIG);
+
+        }
 
     public  HBaseOperation(Configuration conf) throws  IOException{
         this.conf=HBaseConfiguration.create(conf);
@@ -79,6 +94,25 @@ public class HBaseOperation {
         Result rs = table.get(get);
         return rs;
     }
+    /*
+     *5.1 获取一行记录
+     */
+    public Result getOneRecordP(String tableName,String rowkey,String p) throws IOException {
+        HTable table =new HTable(this.conf,tableName);
+        Get get = new Get(rowkey.getBytes()).addColumn("P".getBytes(),p.getBytes());
+        Result rs = table.get(get);
+        return rs;
+    }
+
+    /*
+     *5.2 获取一行记录 根据O获取一行
+     */
+    public Result getOneRecordO(String tableName,String rowkey,String o) throws IOException {
+        HTable table =new HTable(this.conf,tableName);
+        Get get = new Get(rowkey.getBytes()).addColumn("O".getBytes(),o.getBytes());
+        Result rs = table.get(get);
+        return rs;
+    }
     //6.获取所有记录
     public List<Result> getAllRecord(String tableName) throws IOException{
 
@@ -92,4 +126,72 @@ public class HBaseOperation {
         scanner.close();
         return list;
     }
+
+
+        /**
+         * 单条件按查询，查询多条记录
+         * @param tableName
+         */
+        public static List<Result> QueryByFilter(String tableName,String family,String qualifier,String value) {
+            List<Result> list =new ArrayList<Result>();
+            try {
+                 HTablePool pool = new HTablePool(cfg, 1000);
+                     HTable table = (HTable) pool.getTable(tableName);
+                     SingleColumnValueFilter filter = new SingleColumnValueFilter(Bytes.toBytes(family),
+                        Bytes.toBytes(qualifier),
+                        CompareFilter.CompareOp.EQUAL,Bytes.toBytes(value));
+                     filter.setFilterIfMissing(true);
+
+                 Scan s = new Scan();
+                 s.setFilter(filter);
+
+                 ResultScanner rs = table.getScanner(s);
+                     for (Result r : rs) {
+                         list.add(r);
+                         System.out.println("rowkey:" + new String(r.getRow()));
+                             for (KeyValue keyValue : r.raw()) {
+                                 System.out.println("Family：" + new String(keyValue.getFamily())
+                                 +";Qualifier:" + new String(keyValue.getQualifier())
+                                 + ";Vaule:" + new String(keyValue.getValue()));
+                             }
+                     }
+                 rs.close();
+            } catch (Exception e) {
+                 e.printStackTrace();
+            }
+            return list;
+        }
+
+        /**
+        * 组合条件查询
+        * @param tableName
+        */
+        public static void QueryByMultiFilter(String tableName,String[] families,String[] qualifiers,String[] values) {
+        try {
+            HTablePool pool = new HTablePool(cfg, 100);
+                HTable table = (HTable) pool.getTable(tableName);
+                List<Filter> filters = new ArrayList<Filter>();
+                for(int index=0;index<families.length;index++){
+                    SingleColumnValueFilter filter = new SingleColumnValueFilter(Bytes.toBytes(families[index]),
+                         Bytes.toBytes(qualifiers[index]),
+                         CompareFilter.CompareOp.EQUAL,Bytes.toBytes(values[index]));
+                    filters.add(filter);
+                }
+                FilterList filterList = new FilterList(filters);
+                Scan scan = new Scan();
+                scan.setFilter(filterList);
+                ResultScanner rs = table.getScanner(scan);
+                for (Result r : rs) {
+                    System.out.println("rowkey:" + new String(r.getRow()));
+                    for (KeyValue keyValue : r.raw()) {
+                        System.out.println("Family：" + new String(keyValue.getFamily())
+                        +";Qualifier:" + new String(keyValue.getQualifier())
+                        + ";Vaule:" + new String(keyValue.getValue()));
+                    }
+                }
+                rs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 }

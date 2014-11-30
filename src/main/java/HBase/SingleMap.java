@@ -3,8 +3,6 @@ package HBase;
 /**
  * Created by Administrator on 2014/11/29.
  */
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -27,7 +25,6 @@ import java.io.IOException;
  *bloom write data
  */
 public class SingleMap extends Configured implements Tool {
-    static final Log LOG = LogFactory.getLog(SingleMap.class);
     public static final String JOBNAME = "MRImport ";
 
     public static class Map extends
