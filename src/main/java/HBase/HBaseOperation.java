@@ -29,7 +29,7 @@ public class HBaseOperation {
         static {
                 Configuration HBASE_CONFIG = new Configuration();
                 HBASE_CONFIG.set("hbase.zookeeper.quorum", "localhost");
-                HBASE_CONFIG.set("hbase.zookeeper.property.clientPort", "2222");
+                HBASE_CONFIG.set("hbase.zookeeper.property.clientPort", "2181");
                 cfg = new HBaseConfiguration(HBASE_CONFIG);
 
         }
@@ -40,6 +40,7 @@ public class HBaseOperation {
     }
     public HBaseOperation() throws IOException{
         Configuration cnf = new Configuration();
+        
         this.conf=HBaseConfiguration.create(cnf);
         this.admin=new HBaseAdmin(this.conf);
     }
@@ -70,10 +71,10 @@ public class HBaseOperation {
         }
     }
     //3.插入一行记录
-    public void insertRecord(String tableName,String rowkey,String family,String qualifier,String value) throws IOException {
+    public void insertRecord(String tableName,String rowkey,String family,String qualifier,String value,Long ts) throws IOException {
 
         HTable table = new HTable(this.conf,tableName);
-        Put  put = new Put(rowkey.getBytes());
+        Put  put = new Put(rowkey.getBytes(),ts);
         put.add(family.getBytes(),qualifier.getBytes(),value.getBytes());
         table.put(put);
 
@@ -95,7 +96,7 @@ public class HBaseOperation {
         return rs;
     }
     /*
-     *5.1 获取一行记录
+     *5.1 获取一行记录byP
      */
     public Result getOneRecordP(String tableName,String rowkey,String p) throws IOException {
         HTable table =new HTable(this.conf,tableName);
@@ -105,7 +106,7 @@ public class HBaseOperation {
     }
 
     /*
-     *5.2 获取一行记录 根据O获取一行
+     *5.2 获取一行记录 根据SO获取一行
      */
     public Result getOneRecordO(String tableName,String rowkey,String o) throws IOException {
         HTable table =new HTable(this.conf,tableName);
@@ -118,6 +119,9 @@ public class HBaseOperation {
 
         HTable table = new HTable(this.conf,tableName);
         Scan scan = new Scan();
+        //scan.setStartRow(Bytes.toBytes("sens-obs:System_A01"));
+        //scan.setStopRow(Bytes.toBytes("sens-obs:System_A01_145950494"));
+        //scan.setBatch(1000);
         ResultScanner scanner = table.getScanner(scan);
         List<Result> list =new ArrayList<Result>();
         for(Result r:scanner){
@@ -126,7 +130,51 @@ public class HBaseOperation {
         scanner.close();
         return list;
     }
-
+    	/**
+    	 * query Row based on P 
+    	 * scan
+    	 */
+    public static List<Result> ScanRowByP(String tableName,String family,String qualifier) {
+        List<Result> list =new ArrayList<Result>();
+        try {
+             HTablePool pool = new HTablePool(cfg, 1000);
+                 //HTable table = (HTable) pool.getTable(tableName);
+             Scan s = new Scan();
+             s.addColumn(family.getBytes(), qualifier.getBytes());
+             //s.setStartRow("sens-obs:System_A01_1090000000000".getBytes());
+             //s.setStopRow("sens-obs:System_A01_1400000000000".getBytes());
+           
+             //s.setTimeRange(Long.parseLong("1090000000000"),Long.parseLong("1090800000000"));
+             s.setCaching(0);
+             
+             ResultScanner rs = pool.getTable(tableName).getScanner(s);
+                 for (Result r : rs) {
+                     list.add(r);
+                     /*System.out.println("rowkey:" + new String(r.getRow()));
+                         for (KeyValue keyValue : r.raw()) {
+                             System.out.println("Family：" + new String(keyValue.getFamily())
+                             +";Qualifier:" + new String(keyValue.getQualifier())
+                             + ";Vaule:" + new String(keyValue.getValue()));
+                         }
+                      */
+                 }
+             rs.close();
+        } catch (Exception e) {
+             e.printStackTrace();
+        }
+        return list;
+    }
+    /**
+	 * query Row based on P 
+	 * get()
+     * @throws IOException 
+	 */
+	public static Result GetRowByP(String tableName,String rowkey,String family,String qualifier) throws IOException {
+		HTable table =new HTable(cfg,tableName);
+        Get get = new Get(rowkey.getBytes()).addColumn(family.getBytes(),qualifier.getBytes());
+        Result rs = table.get(get);
+        return rs;
+	}
 
         /**
          * 单条件按查询，查询多条记录
@@ -136,7 +184,7 @@ public class HBaseOperation {
             List<Result> list =new ArrayList<Result>();
             try {
                  HTablePool pool = new HTablePool(cfg, 1000);
-                     HTable table = (HTable) pool.getTable(tableName);
+                     //HTable table = (HTable) pool.getTable(tableName);
                      SingleColumnValueFilter filter = new SingleColumnValueFilter(Bytes.toBytes(family),
                         Bytes.toBytes(qualifier),
                         CompareFilter.CompareOp.EQUAL,Bytes.toBytes(value));
@@ -144,8 +192,13 @@ public class HBaseOperation {
 
                  Scan s = new Scan();
                  s.setFilter(filter);
-
-                 ResultScanner rs = table.getScanner(s);
+                 s.setStartRow("sens-obs:Observation_AirTemperature_A01_1090000000000".getBytes());
+                 s.setStopRow("sens-obs:Observation_AirTemperature_A01_1400000000000".getBytes());
+                 s.setCaching(0);
+                 
+                 
+                 s.setTimeRange(1234049430, 1490949320);
+                 ResultScanner rs = pool.getTable(tableName).getScanner(s);
                      for (Result r : rs) {
                          list.add(r);
                          System.out.println("rowkey:" + new String(r.getRow()));
@@ -162,6 +215,42 @@ public class HBaseOperation {
             return list;
         }
 
+        /*
+        *P和O一起查询
+        * @param tableName,families,qulifiers,value
+         */
+        public static List<Result> scanRowByPO(String tableName,String[] families,String[] qualifiers,String[] values) {
+            List<Result> list = new ArrayList<Result>();
+            try {
+                HTablePool pool = new HTablePool(cfg, 100);
+                //HTable table = (HTable) pool.getTable(tableName);
+                List<Filter> filters = new ArrayList<Filter>();
+                for(int index=0;index<families.length;index++){
+                    SingleColumnValueFilter filter = new SingleColumnValueFilter(Bytes.toBytes(families[index]),
+                            Bytes.toBytes(qualifiers[index]),
+                            CompareFilter.CompareOp.EQUAL,Bytes.toBytes(values[index]));
+                    filters.add(filter);
+                }
+                FilterList filterList = new FilterList(filters);
+                Scan scan = new Scan();
+                scan.setFilter(filterList);
+                ResultScanner rs = pool.getTable(tableName).getScanner(scan);
+
+                for (Result r : rs) {
+                    list.add(r);
+                    System.out.println("rowkey:" + new String(r.getRow()));
+                    for (KeyValue keyValue : r.raw()) {
+                        System.out.println("Family：" + new String(keyValue.getFamily())
+                                +";Qualifier:" + new String(keyValue.getQualifier())
+                                + ";Vaule:" + new String(keyValue.getValue()));
+                    }
+                }
+                rs.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return list;
+        }
         /**
         * 组合条件查询
         * @param tableName
@@ -169,7 +258,7 @@ public class HBaseOperation {
         public static void QueryByMultiFilter(String tableName,String[] families,String[] qualifiers,String[] values) {
         try {
             HTablePool pool = new HTablePool(cfg, 100);
-                HTable table = (HTable) pool.getTable(tableName);
+                //HTable table = (HTable) pool.getTable(tableName);
                 List<Filter> filters = new ArrayList<Filter>();
                 for(int index=0;index<families.length;index++){
                     SingleColumnValueFilter filter = new SingleColumnValueFilter(Bytes.toBytes(families[index]),
@@ -180,7 +269,7 @@ public class HBaseOperation {
                 FilterList filterList = new FilterList(filters);
                 Scan scan = new Scan();
                 scan.setFilter(filterList);
-                ResultScanner rs = table.getScanner(scan);
+                ResultScanner rs = pool.getTable(tableName).getScanner(scan);
                 for (Result r : rs) {
                     System.out.println("rowkey:" + new String(r.getRow()));
                     for (KeyValue keyValue : r.raw()) {
@@ -194,4 +283,5 @@ public class HBaseOperation {
                 e.printStackTrace();
             }
         }
+
 }

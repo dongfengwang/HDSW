@@ -36,10 +36,12 @@ public class HBaseTest {
 
         //2.2插入一条记录
 
+        /*
         hbase.insertRecord(tableName, "row1", "article", "title", "Hadoop");
         hbase.insertRecord(tableName, "row1", "author", "name", "veagle");
         hbase.insertRecord(tableName, "row1", "author", "nickname", "serapy");
-
+        */
+        
         //2.3查询一条记录
 
         Result rs1 = hbase.getOneRecord(tableName, "row1");

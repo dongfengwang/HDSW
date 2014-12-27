@@ -2,18 +2,11 @@ package HBase;/**
  * Created by Administrator on 2014/11/24.
  */
 
-import javafx.application.Application;
-import javafx.stage.Stage;
 
-public class CSPARQLParserTest extends Application {
+public class CSPARQLParserTest {
 
     public static void main(String[] args) {
-        launch(args);
-    }
-
-    @Override
-    public void start(Stage primaryStage) {
-        String Csparql = "SELECT ?sensor\n" +
+    	String Csparql = "SELECT ?sensor\n" +
                 "FROM STREAM <http://www.cwi.nl/SRBench/observations> [RANGE 1h STEP 10m]\n" +
                 "WHERE {\n" +
                 "?observation om-owl:procedure ?sensor ;\n" +
@@ -29,5 +22,6 @@ public class CSPARQLParserTest extends Application {
                 i++;
             }
         }
+
     }
 }
