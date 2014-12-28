@@ -30,8 +30,12 @@ public class CSparqlModel {
 	public void CDump(){
 		System.out.println("Select:"+select);
 		System.out.println("Range:"+range+" step:"+step);	
-		
+		int i=0;
 		System.out.println("Where:"+where);
+		while(i<this.where.size()){
+			System.out.println(this.where.get(i).S);
+			i++;
+		}
 		System.out.println("groupBy:"+groupBy);
 		System.out.println("orderBy:"+orderBy);
 		System.out.println("having:"+having);

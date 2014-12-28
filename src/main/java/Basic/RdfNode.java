@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Created by Administrator on 2014/11/9.
  */
-public class RdfNode {
+public class RdfNode{
     public String S;
     public String P;
     public String O;

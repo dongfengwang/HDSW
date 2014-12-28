@@ -25,6 +25,9 @@
         <module name="HDSW" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="HDSW" target="1.6" />
+    </bytecodeTargetLevel>
   </component>
 </project>
 

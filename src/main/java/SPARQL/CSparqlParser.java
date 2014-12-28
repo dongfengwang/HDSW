@@ -8,7 +8,7 @@ public class CSparqlParser {
 	        String[] param = Csparql.split("\n");
 	        for(String key : param){
 	        	/*
-	        	 * select ����
+	        	 * select 
 	        	 */
 	        	if(key.indexOf("SELECT")!=-1){
 	        		String[] select = key.split(" ");
@@ -20,7 +20,7 @@ public class CSparqlParser {
 	        		}
 	        	}
 	        	/*
-	        	 * From����
+	        	 * From
 	        	 */
 	        	if(key.indexOf("FROM")!=-1){
 	        		key = key.replace("[", "");
@@ -40,21 +40,26 @@ public class CSparqlParser {
 	        		
 	        	}
 	        	/*
-	        	 * Where ����
+	        	 * Where
 	        	 */
 	        	if(key.indexOf("WHERE")!=-1){
 	        		key = key.replace("WHERE", "").replace("{","").replace("}","").trim();
 	        		String[] keys = key.split(";");
 	        		int i=0;
+	        		String S=null;
 	        		tuple tu = new tuple();
 	        		while(i<keys.length){
-	        			System.out.println(keys[i]);
+	        			//System.out.println(keys[i]);
+	        			tu = new tuple();
+	        			
 		        		String[] element=keys[i].split(" ");
 		        		if(element.length>=3){
+		        			S=element[0];
 		        			tu.S=element[0];
 		        			tu.P=element[1];	
 			        		tu.O=element[2];
 		        		}else{
+		        			tu.S=S;
 		        			tu.P=element[0];	
 			        		tu.O=element[1];
 		        		}
