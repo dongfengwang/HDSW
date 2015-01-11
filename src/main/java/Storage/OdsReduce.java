@@ -1,24 +1,17 @@
 package Storage;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
+import Basic.TimeTransfer;
+import HBase.HBaseOperation;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.mapreduce.TableReducer;
-import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapreduce.Reducer.Context;
 
-import Basic.TimeTransfer;
-import HBase.HBaseOperation;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class OdsReduce extends TableReducer<Text,Text,NullWritable> {
     public void reduce(Text key, Iterable<Text> values, Context context) throws InterruptedException, IOException {
@@ -95,11 +88,11 @@ public class OdsReduce extends TableReducer<Text,Text,NullWritable> {
             	hbase.insertRecord(tableName,S, "P", P,O,ts);
             }else{
             Put putrow;
-	            if(ts>0){
-	            	putrow = new Put(S.getBytes(),ts);
-	            }else{
-	            	putrow = new Put(S.getBytes());
-	            }
+	        if(ts>0){
+	            putrow = new Put(S.getBytes(),ts);
+	        }else{
+	            putrow = new Put(S.getBytes());
+	        }
 	            System.out.println(S);
 	            putrow.add("P".getBytes(),P.getBytes(), O.getBytes());
 	            putrow.add("O".getBytes(), O.getBytes(), P.getBytes());
